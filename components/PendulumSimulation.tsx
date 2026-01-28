@@ -15,6 +15,7 @@ export default function PendulumSimulation() {
   const [isPaused, setIsPaused] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [currentEnergy, setCurrentEnergy] = useState({ ke: 0, pe: 0, totalEnergy: 0 });
   
   // Physics state
   const angleRef = useRef(Math.PI / 4); // Initial angle (45 degrees)
@@ -122,9 +123,6 @@ export default function PendulumSimulation() {
     angularVelocityRef.current += angularAcceleration * dt;
     angleRef.current += angularVelocityRef.current * dt;
 
-    // Add small damping to prevent infinite oscillation
-    angularVelocityRef.current *= 0.999;
-
     timeRef.current += deltaTime;
   }, [isPaused, isDragging, length, g, pixelsPerMeter]);
 
@@ -139,6 +137,10 @@ export default function PendulumSimulation() {
 
     simulate(deltaTime);
     draw();
+
+    // Update energy state for UI
+    const energy = calculateEnergy(angleRef.current, angularVelocityRef.current);
+    setCurrentEnergy(energy);
 
     animationRef.current = requestAnimationFrame(animate);
   }, [simulate, draw]);
@@ -224,9 +226,9 @@ export default function PendulumSimulation() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [animate, draw]);
+  }, [animate, draw, calculateEnergy]);
 
-  const { pe, ke, totalEnergy } = calculateEnergy(angleRef.current, angularVelocityRef.current);
+  const { pe, ke, totalEnergy } = currentEnergy;
 
   return (
     <div className="space-y-6">
