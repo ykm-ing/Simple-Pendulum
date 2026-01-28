@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 export default function Misconceptions() {
   return (
     <div className="space-y-6 max-w-4xl">

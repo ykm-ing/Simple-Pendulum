@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import PendulumSimulation from '@/components/PendulumSimulation';
 import Equations from '@/components/Equations';
 import Misconceptions from '@/components/Misconceptions';
