@@ -163,12 +163,14 @@ export default function PendulumSimulation() {
       setIsDragging(true);
       setIsPaused(true);
       angularVelocityRef.current = 0;
+      
+      // Add listeners to document for smooth dragging
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
-
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -182,12 +184,19 @@ export default function PendulumSimulation() {
     const angle = Math.atan2(dx, dy);
 
     angleRef.current = angle;
+    
+    // Update energy display immediately
+    const energy = calculateEnergy(angleRef.current, 0);
+    setCurrentEnergy(energy);
+    
     draw();
-  };
+  }, [draw, calculateEnergy, pivotX, pivotY]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
 
   // Take snapshot
   const takeSnapshot = () => {
@@ -278,9 +287,6 @@ export default function PendulumSimulation() {
           width={canvasWidth}
           height={canvasHeight}
           onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
           className="border border-gray-200 rounded cursor-grab active:cursor-grabbing mx-auto block"
           style={{ maxWidth: '100%', height: 'auto' }}
         />
