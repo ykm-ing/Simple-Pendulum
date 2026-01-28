@@ -111,17 +111,23 @@ export default function PendulumSimulation() {
   const simulate = useCallback((deltaTime: number) => {
     if (isPaused || isDragging) return;
 
-    const angle = angleRef.current;
-    const angularVelocity = angularVelocityRef.current;
     const lengthInMeters = length / pixelsPerMeter;
-
-    // Simple pendulum equation: d²θ/dt² = -(g/L) * sin(θ)
-    const angularAcceleration = -(g / lengthInMeters) * Math.sin(angle);
-
-    // Update velocity and angle (Euler integration)
     const dt = deltaTime / 1000; // Convert to seconds
-    angularVelocityRef.current += angularAcceleration * dt;
-    angleRef.current += angularVelocityRef.current * dt;
+
+    // Use smaller sub-steps for better accuracy
+    const subSteps = 3;
+    const subDt = dt / subSteps;
+
+    for (let i = 0; i < subSteps; i++) {
+      const angle = angleRef.current;
+      
+      // Simple pendulum equation: d²θ/dt² = -(g/L) * sin(θ)
+      const angularAcceleration = -(g / lengthInMeters) * Math.sin(angle);
+
+      // Semi-implicit Euler (better energy conservation)
+      angularVelocityRef.current += angularAcceleration * subDt;
+      angleRef.current += angularVelocityRef.current * subDt;
+    }
 
     timeRef.current += deltaTime;
   }, [isPaused, isDragging, length, g, pixelsPerMeter]);
@@ -132,8 +138,11 @@ export default function PendulumSimulation() {
       lastTimeRef.current = currentTime;
     }
 
-    const deltaTime = currentTime - lastTimeRef.current;
+    let deltaTime = currentTime - lastTimeRef.current;
     lastTimeRef.current = currentTime;
+
+    // Cap deltaTime to prevent issues when tab is inactive
+    deltaTime = Math.min(deltaTime, 50); // Max 50ms per frame
 
     simulate(deltaTime);
     draw();
@@ -227,6 +236,10 @@ export default function PendulumSimulation() {
 
   // Start animation loop
   useEffect(() => {
+    // Initialize energy display
+    const initialEnergy = calculateEnergy(angleRef.current, angularVelocityRef.current);
+    setCurrentEnergy(initialEnergy);
+    
     draw();
     animationRef.current = requestAnimationFrame(animate);
 
